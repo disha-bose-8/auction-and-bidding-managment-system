@@ -36,7 +36,7 @@ export async function POST(
     });
   } catch (err: any) {
     // our trigger errors (SQLSTATE 45000) are user-facing validation messages
-    if (err.sqlState === "45000") {
+    if (err.sqlState === 45000 || err.sqlState === "45000") {
       return NextResponse.json({ error: err.sqlMessage }, { status: 400 });
     }
     console.error(err);

@@ -1,21 +1,40 @@
-import { auctions, notifications, users } from './mock-data'
-import type { Auction, Notification, User } from './types'
+import { notifications } from './mock-data'
+import type { Auction, Notification, Role, User } from './types'
 
-export async function getAuctions(): Promise<Auction[]> { return structuredClone(auctions) }
-export async function getAuction(id: number): Promise<Auction | undefined> { return structuredClone(auctions.find((auction) => auction.id === id)) }
-export async function getNotifications(): Promise<Notification[]> { return structuredClone(notifications) }
-export async function login(role: User['role'] = 'Bidder'): Promise<User> { return users.find((user) => user.role === role) ?? users[3] }
-export async function register(data: Pick<User, 'name' | 'email' | 'role'>): Promise<User> { return { id: 99, ...data } }
-export async function placeBid(auctionId: number, bidderId: number, amount: number): Promise<{ auction: Auction; extended: boolean }> {
-  const auction = auctions.find((item) => item.id === auctionId)
-  if (!auction) throw new Error('Auction not found')
-  if (auction.status !== 'Live') throw new Error('Auction is not live')
-  if (auction.sellerId === bidderId) throw new Error('Seller cannot bid on own auction')
-  const current = Math.max(0, ...auction.bids.map((item) => item.amount))
-  if (amount < auction.startingPrice) throw new Error('Bid is below starting price')
-  if (amount <= current) throw new Error('Bid must exceed current highest bid')
-  const extended = new Date(auction.endTime).getTime() - Date.now() < 5 * 60 * 1000
-  auction.bids.push({ id: Date.now(), auctionId, bidderId, bidderName: users.find((u) => u.id === bidderId)?.name ?? 'Demo bidder', amount, time: 'Just now' })
-  if (extended) auction.endTime = new Date(Date.now() + 5 * 60 * 1000).toISOString()
-  return { auction: structuredClone(auction), extended }
+// Every call to our own backend goes through here, so pages never touch fetch directly.
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    cache: 'no-store',
+    credentials: 'same-origin',
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Request failed')
+  return data as T
+}
+
+export type Me = { id: number; name: string; role: Role }
+
+// ---- auctions (MySQL) ----
+export const getAuctions = () => request<Auction[]>('/api/auctions')
+export const getAuction = (id: number) => request<Auction>(`/api/auctions/${id}`)
+export const placeBid = (auctionId: number, amount: number) =>
+  request<{ ok: boolean; extended: boolean; previousBidder: number | null }>(
+    `/api/auctions/${auctionId}/bids`,
+    { method: 'POST', body: JSON.stringify({ amount }) }
+  )
+
+// ---- auth ----
+export const getMe = async (): Promise<Me | null> =>
+  (await request<{ user: Me | null }>('/api/auth/me')).user
+export const login = (email: string, password: string) =>
+  request<{ user: User }>('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) })
+export const register = (data: { name: string; phone: string; email: string; password: string; role: string }) =>
+  request<{ user: User }>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) })
+export const logout = () => request<{ ok: boolean }>('/api/auth/logout', { method: 'POST' })
+
+// ---- notifications: still mock data until the MongoDB step ----
+export async function getNotifications(): Promise<Notification[]> {
+  return structuredClone(notifications)
 }

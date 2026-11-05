@@ -7,5 +7,7 @@ export type Auction = {
   id: number; itemName: string; description: string; category: string; sellerId: number; sellerName: string; sellerRating: number
   startingPrice: number; reservePrice: number; startTime: string; endTime: string; status: AuctionStatus
   image: string; specifications: Record<string, string>; bids: Bid[]
+  // filled in by the real API (the mock data doesn't need them)
+  currentPrice?: number; bidCount?: number; reserveMet?: boolean
 }
 export type Notification = { id: number; type: 'outbid' | 'won' | 'payment' | 'ended'; title: string; description: string; unread: boolean; time: string }
