@@ -25,6 +25,12 @@ export const placeBid = (auctionId: number, amount: number) =>
     { method: 'POST', body: JSON.stringify({ amount }) }
   )
 
+// ---- watchlist (MySQL) ----
+export const getWatchlist = async (): Promise<number[]> =>
+  (await request<{ ids: number[] }>('/api/watchlist')).ids
+export const toggleWatch = (auctionId: number) =>
+  request<{ watching: boolean }>('/api/watchlist', { method: 'POST', body: JSON.stringify({ auctionId }) })
+
 // ---- auth ----
 export const getMe = async (): Promise<Me | null> =>
   (await request<{ user: Me | null }>('/api/auth/me')).user

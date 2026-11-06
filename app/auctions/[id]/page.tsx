@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Check, Clock3, Heart, Info, ShieldCheck, Star, TrendingUp } from 'lucide-react'
 import Header from '@/components/Header'
-import { getAuction, getMe, placeBid, type Me } from '@/lib/api'
+import { getAuction, getMe, getWatchlist, placeBid, toggleWatch, type Me } from '@/lib/api'
 import type { Auction } from '@/lib/types'
 
 const money = (n: number) => `₹${n.toLocaleString('en-IN')}`
@@ -46,6 +46,7 @@ export default function AuctionDetail({ params }: { params: Promise<{ id: string
   const [bidError, setBidError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [watching, setWatching] = useState(false)
 
   const load = useCallback(() => getAuction(Number(id)), [id])
 
@@ -57,7 +58,16 @@ export default function AuctionDetail({ params }: { params: Promise<{ id: string
       })
       .catch((e: Error) => setLoadError(e.message))
     getMe().then(setMe).catch(() => {})
-  }, [load])
+    getWatchlist().then((ids) => setWatching(ids.includes(Number(id)))).catch(() => {})
+  }, [load, id])
+
+  const onWatch = async () => {
+    try {
+      setWatching((await toggleWatch(Number(id))).watching)
+    } catch (e) {
+      if ((e as Error).message === 'Please log in') router.push('/login')
+    }
+  }
 
   if (loadError) {
     return <><Header /><main className="detail-page"><Link href="/" className="back-link"><ArrowLeft size={15} /> Back to auctions</Link><p style={{ color: '#b91c1c' }}>{loadError}</p></main></>
@@ -136,7 +146,7 @@ export default function AuctionDetail({ params }: { params: Promise<{ id: string
           <aside className="bid-panel">
             <div className="panel-top">
               <span className="live-tag"><i /> {live ? 'LIVE AUCTION' : auction.status.toUpperCase()}</span>
-              <span className="watch-action"><Heart size={16} /> Watch</span>
+              <button type="button" className="watch-action" style={{ border: 0, background: 'transparent', cursor: 'pointer' }} onClick={onWatch}><Heart size={16} fill={watching ? '#dc2626' : 'none'} color={watching ? '#dc2626' : undefined} /> {watching ? 'Watching' : 'Watch'}</button>
             </div>
             <div className="timer"><Clock3 size={18} /><div><small>Time remaining</small><b>{now ? formatLeft(msLeft) : '…'}</b></div></div>
             <div className="current-bid">

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ChevronDown, Clock3, Heart, Search, SlidersHorizontal, Tag, TrendingUp } from 'lucide-react'
 import Header from '@/components/Header'
-import { getAuctions } from '@/lib/api'
+import { getAuctions, getWatchlist, toggleWatch } from '@/lib/api'
 import type { Auction, AuctionStatus } from '@/lib/types'
 
 const money = (n: number) => `₹${n.toLocaleString('en-IN')}`
@@ -32,7 +32,7 @@ function Countdown({ date }: { date: string }) {
   return <span className={`countdown ${urgent ? 'urgent' : ''}`}><Clock3 size={13} /> {text}</span>
 }
 
-function AuctionCard({ auction, onWatch }: { auction: Auction; onWatch: (id: number) => void }) {
+function AuctionCard({ auction, onWatch, watching }: { auction: Auction; onWatch: (id: number) => void; watching: boolean }) {
   const current = auction.currentPrice ?? auction.startingPrice
   const bidCount = auction.bidCount ?? auction.bids.length
   return (
@@ -40,7 +40,7 @@ function AuctionCard({ auction, onWatch }: { auction: Auction; onWatch: (id: num
       <div className="card-image">
         <img src={auction.image} alt="" />
         <span className={`status ${statusStyle[auction.status]}`}>{auction.status === 'Live' && <i />}{auction.status}</span>
-        <button className="heart-btn" aria-label={`Watch ${auction.itemName}`} onClick={(e) => { e.preventDefault(); onWatch(auction.id) }}><Heart size={17} /></button>
+        <button className="heart-btn" aria-label={`Watch ${auction.itemName}`} onClick={(e) => { e.preventDefault(); onWatch(auction.id) }}><Heart size={17} fill={watching ? '#dc2626' : 'none'} color={watching ? '#dc2626' : undefined} /></button>
         <div className="image-shade" />
       </div>
       <div className="card-content">
@@ -118,6 +118,7 @@ export default function Page() {
       .then(setAuctions)
       .catch((e: Error) => setLoadError(e.message))
       .finally(() => setLoading(false))
+    getWatchlist().then(setWatched).catch(() => {}) // not logged in -> nothing watched
   }, [])
 
   const filtered = useMemo(() => {
@@ -145,7 +146,14 @@ export default function Page() {
     toggleStatus: (s) => setStatuses((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s])),
     clear: () => { setCategory(''); setStatuses([]); setMaxPrice(MAX_PRICE); setEndingSoon(false); setQuery('') },
   }
-  const onWatch = (id: number) => setWatched((w) => (w.includes(id) ? w.filter((x) => x !== id) : [...w, id]))
+  const onWatch = async (id: number) => {
+    try {
+      const { watching } = await toggleWatch(id)
+      setWatched((w) => (watching ? [...w, id] : w.filter((x) => x !== id)))
+    } catch (e) {
+      if ((e as Error).message === 'Please log in') window.location.href = '/login'
+    }
+  }
 
   return (
     <>
@@ -192,7 +200,7 @@ export default function Page() {
             <div className="auction-grid">
               {loadError && <p style={{ color: '#b91c1c', gridColumn: '1 / -1' }}>Could not load auctions: {loadError}</p>}
               {!loading && !loadError && filtered.length === 0 && <p style={{ color: '#64748b', gridColumn: '1 / -1' }}>No auctions match these filters.</p>}
-              {filtered.map((a) => <AuctionCard auction={a} key={a.id} onWatch={onWatch} />)}
+              {filtered.map((a) => <AuctionCard auction={a} key={a.id} onWatch={onWatch} watching={watched.includes(a.id)} />)}
             </div>
           </div>
         </section>
