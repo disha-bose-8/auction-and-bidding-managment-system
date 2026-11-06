@@ -1,4 +1,3 @@
-import { notifications } from './mock-data'
 import type { Auction, Notification, Role, User } from './types'
 
 // Every call to our own backend goes through here, so pages never touch fetch directly.
@@ -51,7 +50,6 @@ export const register = (data: { name: string; phone: string; email: string; pas
   request<{ user: User }>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) })
 export const logout = () => request<{ ok: boolean }>('/api/auth/logout', { method: 'POST' })
 
-// ---- notifications: still mock data until the MongoDB step ----
-export async function getNotifications(): Promise<Notification[]> {
-  return structuredClone(notifications)
-}
+// ---- notifications (MongoDB) ----
+export const getNotifications = () => request<Notification[]>('/api/notifications')
+export const markNotificationsRead = () => request<{ ok: boolean }>('/api/notifications/read', { method: 'POST' })

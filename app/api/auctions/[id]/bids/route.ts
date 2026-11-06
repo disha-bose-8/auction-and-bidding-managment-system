@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
+import { notifyOutbid } from "@/lib/notifications";
 
 export async function POST(
   req: Request,
@@ -28,7 +29,11 @@ export async function POST(
     ]);
     const [rows]: any = await conn.query("SELECT @prev AS prev, @ext AS ext");
 
-    // TODO (Mongo step): if rows[0].prev, insert an "outbid" notification for that user
+    // tell the previous highest bidder (MongoDB notification); skipped if they outbid themselves
+    if (rows[0].prev && rows[0].prev !== auth.session.userId) {
+      const [a]: any = await pool.query("SELECT ItemName FROM Auctions WHERE AuctionID = ?", [Number(id)]);
+      await notifyOutbid(rows[0].prev, Number(id), a[0]?.ItemName ?? "an auction", value);
+    }
     return NextResponse.json({
       ok: true,
       extended: !!rows[0].ext,
