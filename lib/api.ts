@@ -1,4 +1,5 @@
 import type { Auction, Notification, Role, User } from './types'
+import type { AdminStats } from './admin'
 
 // Every call to our own backend goes through here, so pages never touch fetch directly.
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -53,3 +54,6 @@ export const logout = () => request<{ ok: boolean }>('/api/auth/logout', { metho
 // ---- notifications (MongoDB) ----
 export const getNotifications = () => request<Notification[]>('/api/notifications')
 export const markNotificationsRead = () => request<{ ok: boolean }>('/api/notifications/read', { method: 'POST' })
+
+// ---- admin dashboard (MySQL + MongoDB aggregates) ----
+export const getAdminStats = () => request<AdminStats>('/api/admin/stats')
