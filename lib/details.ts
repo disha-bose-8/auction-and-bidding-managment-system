@@ -25,3 +25,12 @@ export async function getDetails(ids: number[]): Promise<Map<number, AuctionDeta
   }
   return map
 }
+
+// Save (or replace) the details document of one auction. Used when a seller creates an auction.
+export async function saveDetails(d: AuctionDetails): Promise<void> {
+  const db = await getDb()
+  const col = db.collection<AuctionDetails>('auction_details')
+  await col.createIndex({ auctionId: 1 }, { unique: true })
+  await col.createIndex({ tags: 1 })
+  await col.updateOne({ auctionId: d.auctionId }, { $set: { ...d, updatedAt: new Date() } }, { upsert: true })
+}

@@ -25,6 +25,17 @@ export const placeBid = (auctionId: number, amount: number) =>
     { method: 'POST', body: JSON.stringify({ amount }) }
   )
 
+export type Category = { id: number; name: string }
+export type NewAuction = {
+  itemName: string; description: string; categoryId: number
+  startingPrice: number; reservePrice: number | null
+  startTime: string; endTime: string
+  imageUrl: string; specifications: Record<string, string>; tags: string[]
+}
+export const getCategories = () => request<Category[]>('/api/categories')
+export const createAuction = (data: NewAuction) =>
+  request<{ id: number; detailsSaved: boolean }>('/api/auctions', { method: 'POST', body: JSON.stringify(data) })
+
 // ---- watchlist (MySQL) ----
 export const getWatchlist = async (): Promise<number[]> =>
   (await request<{ ids: number[] }>('/api/watchlist')).ids

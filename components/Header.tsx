@@ -43,6 +43,7 @@ export default function Header() {
           <Link href="/">Browse</Link>
           <Link href="/#how">How it works</Link>
           <Link href="/#about">About</Link>
+          {ready && me?.role === 'Seller' && <Link href="/sell">Create auction</Link>}
         </nav>
         <div className="nav-actions">
           {ready && me && (
