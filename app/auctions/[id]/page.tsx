@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Check, Clock3, Heart, Info, ShieldCheck, Star, TrendingUp } from 'lucide-react'
 import Header from '@/components/Header'
+import FeedbackBox from '@/components/FeedbackBox'
 import { getAuction, getMe, getWatchlist, placeBid, toggleWatch, type Me } from '@/lib/api'
 import type { Auction } from '@/lib/types'
 
@@ -117,12 +118,13 @@ export default function AuctionDetail({ params }: { params: Promise<{ id: string
               <h1>{auction.itemName}</h1>
               <div className="seller-line">
                 <span className="seller-avatar">{auction.sellerName[0]}</span>
-                <span>Sold by <b>{auction.sellerName}</b></span>
+                <span>Sold by <Link href={`/sellers/${auction.sellerId}`} style={{ color: 'inherit', fontWeight: 700 }}>{auction.sellerName}</Link></span>
                 {auction.sellerRating > 0
                   ? <span className="stars">{[1, 2, 3, 4, 5].map((i) => <Star key={i} size={14} fill="currentColor" />)} <b>{auction.sellerRating}</b></span>
                   : <span style={{ marginLeft: 8 }}>New seller</span>}
               </div>
               <p className="description">{auction.description}</p>
+              <FeedbackBox auctionId={auction.id} />
               {Object.keys(auction.specifications).length > 0 && (
                 <div className="spec-card">
                   <div className="card-heading"><h2>Specifications</h2><span><Info size={14} /> Verified details</span></div>

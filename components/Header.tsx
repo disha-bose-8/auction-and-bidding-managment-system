@@ -60,7 +60,12 @@ export default function Header() {
           <Link href="/">Browse</Link>
           <Link href="/#how">How it works</Link>
           <Link href="/#about">About</Link>
-          {ready && me?.role === 'Seller' && <Link href="/sell">Create auction</Link>}
+          {ready && me?.role === 'Seller' && (
+            <>
+              <Link href="/sell">Create auction</Link>
+              <Link href={`/sellers/${me.id}`}>My profile</Link>
+            </>
+          )}
           {ready && me?.role === 'Admin' && <Link href="/admin">Dashboard</Link>}
         </nav>
         <div className="nav-actions">

@@ -57,3 +57,16 @@ export const markNotificationsRead = () => request<{ ok: boolean }>('/api/notifi
 
 // ---- admin dashboard (MySQL + MongoDB aggregates) ----
 export const getAdminStats = () => request<AdminStats>('/api/admin/stats')
+
+// ---- seller profile and feedback (MySQL) ----
+export type SellerProfile = {
+  id: number; name: string; memberSince: string
+  rating: number | null; reviewCount: number; itemsSold: number
+  auctions: { id: number; itemName: string; status: string; price: number; image: string; endTime: string }[]
+  reviews: { rating: number; comment: string | null; from: string; item: string; date: string }[]
+}
+export const getSeller = (id: number) => request<SellerProfile>(`/api/sellers/${id}`)
+export const getFeedbackStatus = (auctionId: number) =>
+  request<{ eligible: boolean; given: { rating: number; comment: string | null } | null }>(`/api/auctions/${auctionId}/feedback`)
+export const submitFeedback = (auctionId: number, rating: number, comment: string) =>
+  request<{ ok: boolean }>(`/api/auctions/${auctionId}/feedback`, { method: 'POST', body: JSON.stringify({ rating, comment }) })
